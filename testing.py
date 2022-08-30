@@ -1,6 +1,9 @@
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
 import time
 import numpy as np
 import pandas as pd
@@ -68,7 +71,6 @@ class scraper:
     def scrape_info(self, links):
 
         for link in links:
-            start = time.time()
             driver = self.driver
             driver.get(link)
             time.sleep(2)
@@ -104,22 +106,18 @@ class scraper:
                 self.film_dic['Top 250 Position'].append('N/A')
             description = driver.find_element(by = By.XPATH, value='//div[@class="review body-text -prose -hero prettify"]//p').text
             self.film_dic['Description'].append(description)
-            time.sleep(1)
         return self.film_dic
 
 
 if __name__ == "__main__":
-    try:
-        lbox_scrape = scraper()
-        lbox_scrape.accept_cookies()
-        link_list = lbox_scrape.get_links_from_several_pages(pages = 1)
-        # link_list = ['https://letterboxd.com/film/the-matrix/', 'https://letterboxd.com/film/knives-out-2019/']
-        film_data = lbox_scrape.scrape_info(link_list)
-        lbox_scrape.driver.quit()
-        print(pd.DataFrame.from_dict(film_data))
-        # print(link_list)
-    except:
-        lbox_scrape.driver.quit()
+    lbox_scrape = scraper()
+    lbox_scrape.accept_cookies()
+    link_list = lbox_scrape.get_links_from_several_pages(pages = 1)
+    # link_list = ['https://letterboxd.com/film/the-matrix/', 'https://letterboxd.com/film/knives-out-2019/']
+    film_data = lbox_scrape.scrape_info(link_list)
+    lbox_scrape.driver.quit()
+    print(pd.DataFrame.from_dict(film_data))
+    # print(link_list)
 
 
 
