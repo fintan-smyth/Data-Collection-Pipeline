@@ -40,7 +40,7 @@ class scraper:
 
     def get_links(self):
         delay = 10
-        WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="poster-list -p70 -grid"]')))
+        WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="poster-list -p70 -grid"]/li')))
         print('Poster list ready...')
         film_container = self.driver.find_element(by=By.XPATH, value='//*[@class="poster-list -p70 -grid"]')
         film_list = film_container.find_elements(by=By.XPATH, value='./li')
@@ -63,13 +63,14 @@ class scraper:
             time.sleep(1)
             next_page_url = f'https://letterboxd.com/films/popular/size/small/page/{next_page}/'
             self.driver.get(next_page_url)
+            print(f'Page {next_page} loaded.')
             next_page += 1
             big_list.extend(self.get_links())
         
         return big_list
     
     def scrape_info(self, links):
-        
+
         delay = 5
         try:
             for link in links:
@@ -141,11 +142,11 @@ class scraper:
 if __name__ == "__main__":
     lbox_scrape = scraper()
     lbox_scrape.accept_cookies()
-    link_list = lbox_scrape.get_links_from_several_pages(pages = 2)
+    link_list = lbox_scrape.get_links_from_several_pages(pages = 10)
     # link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
-    film_data = lbox_scrape.scrape_info(link_list)
+    # film_data = lbox_scrape.scrape_info(link_list)
     lbox_scrape.driver.quit()
-    # print(link_list)
+    # print(len(link_list))
 
 
 
