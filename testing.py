@@ -141,7 +141,7 @@ class scraper:
 if __name__ == "__main__":
     lbox_scrape = scraper()
     lbox_scrape.accept_cookies()
-    link_list = lbox_scrape.get_links_from_several_pages(pages = 1)
+    link_list = lbox_scrape.get_links_from_several_pages(pages = 2)
     # link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
     film_data = lbox_scrape.scrape_info(link_list)
     lbox_scrape.driver.quit()
