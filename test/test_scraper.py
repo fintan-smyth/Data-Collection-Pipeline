@@ -1,6 +1,4 @@
-from scraper import scraper
-from hypothesis import given
-import hypothesis.strategies as st
+from data_collection import scraper
 import os
 import random
 import shutil
@@ -8,17 +6,16 @@ import unittest
 
 class scraperTestCase(unittest.TestCase):
     def setUp(self):
-        self.scrapetest = scraper()
+        self.scrapetest = scraper.scraper()
 
     # @unittest.skip
     def test_accept_cookies(self):
         accepted = self.scrapetest.accept_cookies()
         self.assertTrue(accepted)
 
-
     # @unittest.skip
     def test_get_film_links(self):
-        pages = 5
+        pages = 3
         self.scrapetest.accept_cookies()
         link_list = self.scrapetest.get_film_links(pages)
         n_links = len(link_list)
@@ -65,7 +62,6 @@ class scraperTestCase(unittest.TestCase):
         self.assertTrue(os.access('raw_data/testfilm/data.json', os.F_OK))
         self.assertTrue(os.access('raw_data/testfilm/images/testfilm_poster.jpg', os.F_OK))
         shutil.rmtree('raw_data/testfilm')
-
 
     def tearDown(self):
         self.scrapetest.driver.quit()
