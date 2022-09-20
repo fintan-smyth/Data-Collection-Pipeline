@@ -1,0 +1,4 @@
+.hypothesis
+raw_data
+__pycache__
+geckodriver.log
