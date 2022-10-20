@@ -398,11 +398,11 @@ class scraper:
 
         
 if __name__ == "__main__":
-    lbox_scraper = scraper(start_page = 11)
+    lbox_scraper = scraper(start_page = 1)
     lbox_scraper.accept_cookies()
-    # link_list = lbox_scraper.get_film_links(pages = 2)
+    link_list = lbox_scraper.get_film_links(pages = 10)
     # link_list = ['https://letterboxd.com/film/spider-man-into-the-spider-verse/', 'https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
-    link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/avengers-infinity-war/']
+    # link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/avengers-infinity-war/']
     for link in link_list:
         if lbox_scraper.check_if_link_already_scraped(link) == True:
             link_id = link.split('/')[4]
