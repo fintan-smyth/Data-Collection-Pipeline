@@ -220,12 +220,18 @@ class scraper:
 
     def __store_tabular_data_rds(self, film_data_dic: dict):
         if len(film_data_dic) > 0:
+            print(film_data_dic)
             film_data_df = pd.DataFrame.from_dict(film_data_dic).set_index('friendly_id')
             film_data_df['top_250_position'] = film_data_df['top_250_position'].astype('Int64')
             film_data_df.to_sql('film_data', self.engine, if_exists='append')
             print('\nTabular data uploaded to RDS')
         else:
             print('\nNo tabular data to upload')
+
+    def __store_tabular_data_rds_docker(self, film_data_dic: dict):
+        film_data_df = pd.DataFrame([film_data_dic]).set_index('friendly_id')
+        film_data_df['top_250_position'] = film_data_df['top_250_position'].astype('Int64')
+        film_data_df.to_sql('film_data', self.engine, if_exists='append')
         
     def __save_tabular_data_csv(self, film_data_dic: dict):
         if len(film_data_dic) > 0:
@@ -361,6 +367,7 @@ class scraper:
         '''
         self.__store_raw_data_local(film_data_dic)
         self.__store_raw_data_s3(film_data_dic)
+        self.__store_tabular_data_rds_docker(film_data_dic)
 
     def data_storage_options_prompt(self):
         '''
@@ -396,26 +403,26 @@ class scraper:
             else:
                 print('\nPlease choose yes or no.')
 
+    
         
 if __name__ == "__main__":
-    lbox_scraper = scraper(start_page = 11)
+    lbox_scraper = scraper(start_page = 13)
     lbox_scraper.accept_cookies()
-    link_list = lbox_scraper.get_film_links(pages = 2)
-    link_list = ['https://letterboxd.com/film/spider-man-into-the-spider-verse/', 'https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
-    link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/avengers-infinity-war/']
+    link_list = lbox_scraper.get_film_links(pages = 1)
+    # link_list = ['https://letterboxd.com/film/spider-man-into-the-spider-verse/', 'https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
+    # link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/avengers-infinity-war/']
     for link in link_list:
         if lbox_scraper.check_if_link_already_scraped(link) == True:
             link_id = link.split('/')[4]
             print(f'Data for {link_id} already exists. Skipping to next link...')
             continue
-        try:
-            film_data_dic = lbox_scraper.scrape_data_from_film_entry(link)
-            lbox_scraper.store_raw_scraped_data(film_data_dic)
-        except:
-            print('\nAborted')
-            break
+        # try:
+        film_data_dic = lbox_scraper.scrape_data_from_film_entry(link)
+        lbox_scraper.store_raw_scraped_data(film_data_dic)
+        # except:
+        #     print('\nAborted')
+        #     break
     lbox_scraper.driver.quit()
-    lbox_scraper.data_storage_options_prompt()
 
 
 
