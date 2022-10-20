@@ -1,5 +1,6 @@
 from data_collection import scraper
-from sqlalchemy import create_engine, delete
+from datetime import datetime
+from sqlalchemy import create_engine
 import pandas as pd
 import boto3
 import os
@@ -11,12 +12,12 @@ class scraperTestCase(unittest.TestCase):
     def setUp(self):
         self.scrapetest = scraper.scraper()
 
-    @unittest.skip
+    # @unittest.skip
     def test_accept_cookies(self):
         accepted = self.scrapetest.accept_cookies()
         self.assertTrue(accepted)
 
-    @unittest.skip
+    # @unittest.skip
     def test_get_film_links(self):
         pages = 3
         self.scrapetest.accept_cookies()
@@ -24,7 +25,7 @@ class scraperTestCase(unittest.TestCase):
         n_links = len(link_list)
         self.assertEqual(n_links, pages*72)
     
-    @unittest.skip
+    # @unittest.skip
     def test_scrape_data_from_film_entry(self):
         self.scrapetest.accept_cookies()
         link_list = ['https://letterboxd.com/film/spider-man-into-the-spider-verse/', 
@@ -44,26 +45,27 @@ class scraperTestCase(unittest.TestCase):
         film_data = self.scrapetest.scrape_data_from_film_entry(film_link)
         self.assertTrue(len(film_data) == 14)
         for key in film_data:
-            self.assertTrue(len(film_data[key]) > 0)
+            if type(film_data[key]) == str:
+                self.assertTrue(len(film_data[key]) > 0)
     
-    @unittest.skip
+    # @unittest.skip
     def test_store_raw_scraped_data(self):
         self.scrapetest.accept_cookies()
         s3 = boto3.resource('s3')
         bucket = s3.Bucket('letterboxd-data-bucket')
         film_data_dic = {"friendly_id": "testfilm",
-                         "UUID": "1234-5678-9012-3456", 
-                         "Title": "Test Film", 
-                         "Year": "1998", 
-                         "Runtime": "420 mins", 
-                         "Rating": "5.0", 
-                         "Watches": "999K", 
-                         "Lists": "100K", 
-                         "Likes": "10M", 
-                         "Director": "Fintan Smyth", 
-                         "Top 250 Position": "1", 
-                         "Description": "Test description",
-                         "Poster": "https://a.ltrbxd.com/resized/sm/upload/dp/sq/oj/cg/hNjxJbejPHSmKVidHQ9ZHaC0Z7r-0-230-0-345-crop.jpg?v=f0ff67d1b9",
+                         "uuid": "1234-5678-9012-3456", 
+                         "title": "Test Film", 
+                         "year": "1998", 
+                         "runtime": "420 mins", 
+                         "rating": "5.0", 
+                         "watches": "999K", 
+                         "lists": "100K", 
+                         "likes": "10M", 
+                         "director": "Fintan Smyth", 
+                         "top_250_position": "1", 
+                         "desciption": "Test description",
+                         "poster_link": "https://a.ltrbxd.com/resized/sm/upload/dp/sq/oj/cg/hNjxJbejPHSmKVidHQ9ZHaC0Z7r-0-230-0-345-crop.jpg?v=f0ff67d1b9",
                          "data_obtained_time": "2020-01-01 16:20:00"}
         self.scrapetest.store_raw_scraped_data(film_data_dic)
         self.assertTrue(os.access('raw_data/testfilm/data.json', os.F_OK))
@@ -87,29 +89,38 @@ class scraperTestCase(unittest.TestCase):
         engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{ENDPOINT}:{PORT}/{DATABASE}")
 
         self.scrapetest.accept_cookies()
-        film_data_dic = {"friendly_id": "testfilm",
-                         "UUID": "1234-5678-9012-3456", 
-                         "Title": "Test Film", 
-                         "Year": "1998", 
-                         "Runtime": "420 mins", 
-                         "Rating": "5.0", 
-                         "Watches": "999K", 
-                         "Lists": "100K", 
-                         "Likes": "10M", 
-                         "Director": "Fintan Smyth", 
-                         "Top 250 Position": "1", 
-                         "Description": "Test description",
-                         "Poster": "https://a.ltrbxd.com/resized/sm/upload/dp/sq/oj/cg/hNjxJbejPHSmKVidHQ9ZHaC0Z7r-0-230-0-345-crop.jpg?v=f0ff67d1b9",
-                         "data_obtained_time": "2020-01-01 16:20:00"}
+        film_data_dic = {"friendly_id": "testfilm", 
+                         "uuid": "1234-5678-9012-3456", 
+                         "title": "Test Film", 
+                         "year": 1998, 
+                         "runtime": 420, 
+                         "rating": 5.0, 
+                         "watches": 10000000, 
+                         "lists": 999999, 
+                         "likes": 3141592, 
+                         "director": "Fintan Smyth", 
+                         "top_250_position": 1, 
+                         "description": 'Test description', 
+                         "poster_link": "https://a.ltrbxd.com/resized/film-poster/2/4/0/3/4/4/240344-la-la-land-0-500-0-750-crop.jpg?v=053670ff84", 
+                         "data_obtained_time": datetime.now()}
         self.scrapetest.film_data_dic_list.append(film_data_dic)
+        print('\n\n SELECT YES TO ALL OPTIONS FOR TESTING \n\n')
         self.scrapetest.data_storage_options_prompt()
         self.assertTrue(os.access('film_data.csv', os.F_OK))
         csv_df = pd.read_csv('film_data.csv', index_col=0)
-        csv_df = csv_df.drop(index='testfilm')
-        csv_df.to_csv('film_data.csv')
-        rds_df = pd.read_sql_table('film_data', engine)
-        print(rds_df.loc[rds_df['friendly_id'] == 'testfilm'])
-        # finish after next prereq content
+        if 'testfilm' in csv_df.index:
+            csv_df = csv_df.drop(index='testfilm')
+            csv_df.to_csv('film_data.csv')
+        else:
+            raise Exception('Failed to save data to .csv')
+        
+        rds_df = pd.read_sql_table('film_data', engine).set_index('friendly_id')
+        if 'testfilm' in rds_df.index:
+            engine.execute("""DELETE FROM film_data WHERE friendly_id = 'testfilm'""")
+            # print(engine.execute("""SELECT friendly_id FROM film_data""").fetchall())
+            
+        else:
+            raise Exception('Failed to upload data to RDS')
 
 
 
