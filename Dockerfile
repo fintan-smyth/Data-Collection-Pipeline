@@ -13,4 +13,5 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
-CMD ["python", "scraper.py"]
+ENTRYPOINT ["python", "scraper.py"]
+CMD [1 50]

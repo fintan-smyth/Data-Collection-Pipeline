@@ -13,6 +13,7 @@ import json
 import os
 import requests
 import shutil
+import sys
 import time
 import uuid
 
@@ -47,6 +48,7 @@ class scraper:
         options.add_argument("--headless")
         options.add_argument("window-size=1920,1080")
         self.driver = webdriver.Firefox(options=options)
+        # self.driver = webdriver.Remote('http://127.0.0.1:4444/wd/hub', options=options)
         
         DATABASE_TYPE = 'postgresql'
         DBAPI = 'psycopg2'
@@ -56,12 +58,12 @@ class scraper:
         PORT = 5432
         DATABASE = 'postgres'
         self.engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{ENDPOINT}:{PORT}/{DATABASE}")
-        self.film_data_dic_list = []
+        # self.film_data_dic_list = []
         self.start_page = start_page
         self.start_url = f"https://letterboxd.com/films/popular/page/{self.start_page}"
         self.driver.get(self.start_url)
 
-    def __get_film_links_from_single_page(self) -> list:
+    def get_film_links_from_single_page(self) -> list:
         delay = 10
         WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="poster-list -p70 -grid"]/li')))
         print('Poster list ready...')
@@ -153,7 +155,7 @@ class scraper:
     
     def __clean_scraped_data(self, film_data_dic: dict) -> dict:
         film_data_dic['year'] = int(film_data_dic['year'])
-        film_data_dic['runtime'] = int(film_data_dic['runtime'].split()[0])
+        film_data_dic['runtime'] = int(film_data_dic['runtime'].split()[0].replace(',', ''))
         film_data_dic['rating'] = float(film_data_dic['rating'])
         watches = film_data_dic['watches'].replace(',', '')
         film_data_dic['watches'] = int(watches)
@@ -214,7 +216,9 @@ class scraper:
         '''
         friendly_id = film_data_dic['friendly_id']
 
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client('s3', 
+                                aws_access_key_id='AKIAWQVNI7VAFIWE6GHP',
+                                aws_secret_access_key= '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')
         s3_client.upload_file(f'raw_data/{friendly_id}/data.json', 'letterboxd-data-bucket', f'raw_data/{friendly_id}/data.json')
         s3_client.upload_file(f'raw_data/{friendly_id}/images/{friendly_id}_poster.jpg', 'letterboxd-data-bucket', f'raw_data/{friendly_id}/images/{friendly_id}_poster.jpg')
 
@@ -232,6 +236,9 @@ class scraper:
         film_data_df = pd.DataFrame([film_data_dic]).set_index('friendly_id')
         film_data_df['top_250_position'] = film_data_df['top_250_position'].astype('Int64')
         film_data_df.to_sql('film_data', self.engine, if_exists='append')
+
+    def __remove_local_raw_data(self):
+        shutil.rmtree('raw_data', ignore_errors=True)
         
     def __save_tabular_data_csv(self, film_data_dic: dict):
         if len(film_data_dic) > 0:
@@ -350,7 +357,7 @@ class scraper:
 
 
         film_data_dic = self.__clean_scraped_data(film_data_dic)
-        self.film_data_dic_list.append(film_data_dic)
+        # self.film_data_dic_list.append(film_data_dic)
         # print('\n')
         time.sleep(1)
 
@@ -367,6 +374,7 @@ class scraper:
         '''
         self.__store_raw_data_local(film_data_dic)
         self.__store_raw_data_s3(film_data_dic)
+        self.__remove_local_raw_data()
         self.__store_tabular_data_rds_docker(film_data_dic)
 
     def data_storage_options_prompt(self):
@@ -397,7 +405,7 @@ class scraper:
                 print("\nRaw data saved in 'raw_data' folder")
                 break
             elif raw_data_reply[0] == 'n':
-                shutil.rmtree('raw_data', ignore_errors=True)
+                self.__remove_local_raw_data()
                 print('\nLocal copy of raw data removed')
                 break
             else:
@@ -406,22 +414,30 @@ class scraper:
     
         
 if __name__ == "__main__":
-    lbox_scraper = scraper(start_page = 13)
+    lbox_scraper = scraper(start_page = int(sys.argv[1]))
     lbox_scraper.accept_cookies()
-    link_list = lbox_scraper.get_film_links(pages = 1)
+    # link_list = lbox_scraper.get_film_links(pages = int(sys.argv[2]))
     # link_list = ['https://letterboxd.com/film/spider-man-into-the-spider-verse/', 'https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/lady-bird/', 'https://letterboxd.com/film/dune-2021/', 'https://letterboxd.com/film/the-grand-budapest-hotel/', 'https://letterboxd.com/film/once-upon-a-time-in-hollywood/', 'https://letterboxd.com/film/la-la-land/', 'https://letterboxd.com/film/whiplash-2014/', 'https://letterboxd.com/film/avengers-infinity-war/', 'https://letterboxd.com/film/the-wolf-of-wall-street/', 'https://letterboxd.com/film/everything-everywhere-all-at-once/', 'https://letterboxd.com/film/the-shining/']
     # link_list = ['https://letterboxd.com/film/ratatouille/', 'https://letterboxd.com/film/avengers-infinity-war/']
-    for link in link_list:
-        if lbox_scraper.check_if_link_already_scraped(link) == True:
-            link_id = link.split('/')[4]
-            print(f'Data for {link_id} already exists. Skipping to next link...')
-            continue
-        # try:
-        film_data_dic = lbox_scraper.scrape_data_from_film_entry(link)
-        lbox_scraper.store_raw_scraped_data(film_data_dic)
-        # except:
-        #     print('\nAborted')
-        #     break
+    
+    next_page = lbox_scraper.start_page + 1
+    pages = int(sys.argv[2])
+    for i in range(pages):
+        link_list = lbox_scraper.get_film_links_from_single_page()
+        for link in link_list:
+            if lbox_scraper.check_if_link_already_scraped(link) == True:
+                link_id = link.split('/')[4]
+                print(f'Data for {link_id} already exists. Skipping to next link...')
+                continue
+            film_data_dic = lbox_scraper.scrape_data_from_film_entry(link)
+            lbox_scraper.store_raw_scraped_data(film_data_dic)
+        if next_page == lbox_scraper.start_page + pages:
+            break
+        next_page_url = f'https://letterboxd.com/films/popular/size/small/page/{next_page}/'
+        lbox_scraper.driver.get(next_page_url)
+        print(f'Page {next_page} loaded.')
+        next_page += 1
+        
     lbox_scraper.driver.quit()
 
 
