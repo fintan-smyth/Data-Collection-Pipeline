@@ -219,9 +219,7 @@ class scraper:
         '''
         friendly_id = film_data_dic['friendly_id']
 
-        s3_client = boto3.client('s3', 
-                                aws_access_key_id='AKIAWQVNI7VAFIWE6GHP',
-                                aws_secret_access_key= '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')
+        s3_client = boto3.client('s3')
         s3_client.upload_file(f'raw_data/{friendly_id}/data.json', 'letterboxd-data-bucket', f'raw_data/{friendly_id}/data.json')
         s3_client.upload_file(f'raw_data/{friendly_id}/images/{friendly_id}_poster.jpg', 'letterboxd-data-bucket', f'raw_data/{friendly_id}/images/{friendly_id}_poster.jpg')
 
