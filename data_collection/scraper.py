@@ -93,19 +93,18 @@ class scraper:
         img_tag = poster_container.find_element(by=By.TAG_NAME, value = 'img')
         poster_link = img_tag.get_attribute('src')
         film_data_dic['poster_link'] = poster_link
-        # print(f'Poster link: {poster_link}')
 
-    def __scrape_text_element(self, film_data_dic: dict, element: str, xpath: str):
+    def __scrape_text_element(self, film_data_dic: dict, element_name: str, xpath: str):
         
         delay = 10
         driver = self.driver
 
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
         scraped_text = driver.find_element(by=By.XPATH, value=xpath).text.partition('  ')[0]
-        film_data_dic[element] = scraped_text
+        film_data_dic[element_name] = scraped_text
         # print(f'{element}: {scraped_text}')
 
-    def __scrape_film_stat_element(self, film_data_dic: dict, element: str, xpath: str):
+    def __scrape_film_stat_element(self, film_data_dic: dict, element_name: str, xpath: str):
 
         delay = 10
         driver = self.driver
@@ -113,7 +112,7 @@ class scraper:
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
         stat_container = driver.find_element(by=By.XPATH, value=xpath)
         stat = stat_container.get_attribute('data-original-title').split()[2]
-        film_data_dic[f'{element}'] = stat
+        film_data_dic[element_name] = stat
         # print(f'{element}: {stat}')
 
     def __scrape_all_text_data(self, film_data_dic: dict):
@@ -130,7 +129,6 @@ class scraper:
         self.__scrape_film_stat_element(film_data_dic, 'lists', '//a[@class="has-icon icon-list icon-16 tooltip"]')
         self.__scrape_film_stat_element(film_data_dic, 'likes', '//a[@class="has-icon icon-like icon-liked icon-16 tooltip"]')
 
-        
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//a[starts-with(@href,"/director/")]')))
         director = driver.find_element(by=By.XPATH, value='//a[starts-with(@href,"/director/")]').text
         try:
@@ -171,10 +169,6 @@ class scraper:
         director = film_data_dic['director']
         if len(director) == 2:
             film_data_dic['director'] = f'{director[0]}, {director[1]}'
-        elif len(director) == 3:
-            film_data_dic['director'] = f'{director[0]}, {director[1]}, {director[2]}'
-        else:
-            pass
         try:
             film_data_dic['top_250_position'] = int(film_data_dic['top_250_position'])
         except:
@@ -236,7 +230,6 @@ class scraper:
         film_data_df['top_250_position'] = film_data_df['top_250_position'].astype('Int64')
         output_path='film_data.csv'
         film_data_df.to_csv(output_path, mode='a', header=not os.path.exists(output_path))
-        print('\nTabular data saved to to film_data.csv')
 
     def accept_cookies(self):
         '''
@@ -256,6 +249,14 @@ class scraper:
         time.sleep(1)
     
     def get_film_links_from_single_page(self) -> list:
+        '''
+        Scrapes all links to film entries from a single page of letterboxd's popular section and stores the links in a list.
+
+        Returns
+        -------
+        link_list: list
+            A list containing links to film entries on letterboxd.com.
+        '''
         delay = 10
         WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="poster-list -p70 -grid"]/li')))
         print('Poster list ready...')
@@ -327,12 +328,10 @@ class scraper:
         timestamp = datetime.now()
         # print(f'data_obtained_time: {timestamp}')
         film_data_dic['data_obtained_time'] = timestamp
-
-
         film_data_dic = self.__clean_scraped_data(film_data_dic)
-        # self.film_data_dic_list.append(film_data_dic)
         # print('\n')
         time.sleep(1)
+        self.__store_raw_data_local(film_data_dic)
 
         return film_data_dic
 
@@ -340,16 +339,16 @@ class scraper:
         '''
         Prompts the user for how they would like to store their data.
         '''
-        while True:
-            s3_prompt = input('Store scraped raw data in s3 bucket? (Y/N)').lower().strip()
-            if s3_prompt[0] == 'n':
-                self.s3_storage_bool = False
-                break
-            elif s3_prompt[0] == 'y':
-                self.s3_storage_bool = True
-                break
-            else:
-                print('Please choose yes or no...')
+        # while True:
+        #     s3_prompt = input('Store scraped raw data in s3 bucket? (Y/N)').lower().strip()
+        #     if s3_prompt[0] == 'n':
+        #         self.s3_storage_bool = False
+        #         break
+        #     elif s3_prompt[0] == 'y':
+        #         self.s3_storage_bool = True
+        #         break
+        #     else:
+        #         print('Please choose yes or no...')
 
         while True:
             keep_raw_prompt = input('Keep local copy of raw data? (Y/N)').lower().strip()
@@ -392,9 +391,8 @@ class scraper:
         film_data_dic: dict
             A dictionary containing all scraped data for a single film.
         '''
-        self.__store_raw_data_local(film_data_dic)
-        if self.s3_storage_bool == True:
-            self.__store_raw_data_s3(film_data_dic)
+        # if self.s3_storage_bool == True:
+        #     self.__store_raw_data_s3(film_data_dic)
         if self.keep_raw_data_bool == False:
             self.__remove_local_raw_data()
         if self.rds_bool == True:
@@ -426,12 +424,3 @@ if __name__ == "__main__":
         next_page += 1
         
     lbox_scraper.driver.quit()
-
-
-
-
-
-
-
-
-
