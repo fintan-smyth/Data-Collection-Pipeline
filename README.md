@@ -905,4 +905,15 @@ jobs:
   - The `docker/setup-buildx-action` is then run to prepare for building the image.
   - Finally the `docker/build-push-action` is run to build the image and push it to docker hub using my account details.
 
- 
+The action is seen to have been successfully executed on a `dockerbuild` push:
+
+![actions](readme_images/githubactions.jpg) 
+
+And the newest build of my image can now be found on docker hub.
+
+![dockerhub](readme_images/dockerhub.jpg)
+
+
+# Conclusions
+
+In conclusion, this scraper project has been a good learning experience for coding in a more real-world scenario. I have had the opportunity to use a variety of different technologies that I may encounter in the future and had to troubleshoot problems in a more complicated and interconnected project. To further improve this project I could establish a way to safely pass my amazon IAM access keys to the docker image allowing full usage of my scrapers capabilities. Additionally, I could use the data I have extracted to perform some data analysis in order to gain insights on my dataset and practice data analysis and visualisation skills.
