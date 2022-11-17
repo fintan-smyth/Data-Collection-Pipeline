@@ -339,16 +339,16 @@ class scraper:
         '''
         Prompts the user for how they would like to store their data.
         '''
-        while True:
-            s3_prompt = input('Store scraped raw data in s3 bucket? (Y/N)').lower().strip()
-            if s3_prompt[0] == 'n':
-                self.s3_storage_bool = False
-                break
-            elif s3_prompt[0] == 'y':
-                self.s3_storage_bool = True
-                break
-            else:
-                print('Please choose yes or no...')
+        # while True:
+        #     s3_prompt = input('Store scraped raw data in s3 bucket? (Y/N)').lower().strip()
+        #     if s3_prompt[0] == 'n':
+        #         self.s3_storage_bool = False
+        #         break
+        #     elif s3_prompt[0] == 'y':
+        #         self.s3_storage_bool = True
+        #         break
+        #     else:
+        #         print('Please choose yes or no...')
 
         while True:
             keep_raw_prompt = input('Keep local copy of raw data? (Y/N)').lower().strip()
@@ -391,8 +391,8 @@ class scraper:
         film_data_dic: dict
             A dictionary containing all scraped data for a single film.
         '''
-        if self.s3_storage_bool == True:
-            self.__store_raw_data_s3(film_data_dic)
+        # if self.s3_storage_bool == True:
+        #     self.__store_raw_data_s3(film_data_dic)
         if self.keep_raw_data_bool == False:
             self.__remove_local_raw_data()
         if self.rds_bool == True:
